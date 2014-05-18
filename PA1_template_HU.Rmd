@@ -1,0 +1,85 @@
+Reproducible Research -- Assignment 1
+========================================================
+
+# Loading and preprocessing the data
+
+```{r, echo=TRUE}
+setwd('C:/Users/Stephen/Desktop')
+mydataFull <- read.csv('activity.csv')
+mydata <- droplevels(mydataFull[!is.na(mydataFull$steps), ])
+```
+
+# Total number of steps per day
+
+## Histogram
+
+```{r fig.height=4.5, echo=TRUE}
+stepsPerDay <- tapply(mydata$steps, mydata$date, sum)
+hist(stepsPerDay)
+```
+
+## Mean and median of total steps per day
+
+```{r, echo=TRUE}
+cat('Mean of daily total steps: ', mean(stepsPerDay), '\n', sep = '')
+cat('Median of daily total steps: ', median(stepsPerDay), '\n', sep = '')
+```
+
+# Daily activity pattern
+
+```{r fig.height=4.5, echo=TRUE}
+meanEachIntvl <- tapply(mydata$steps, as.factor(mydata$interval), mean)
+plot(meanEachIntvl ~ unique(mydata$interval), type = 'l', main = 'Daily activity pattern')
+```
+
+# Time interval with maximum mean steps per day
+
+```{r, echo=TRUE}
+cat('Time interval with maximum mean steps: ', unique(mydata$interval)[which(meanEachIntvl==max(meanEachIntvl))], sep = '')
+```
+
+# Missing values
+
+## Number of missing values
+
+```{r, echo=TRUE}
+cat('Number of missing values: ', sum(is.na(mydataFull$steps)), sep = '')
+```
+
+## Input missing values and re-analysis
+
+```{r fig.height=4.5, echo=TRUE}
+mydataMissing <- droplevels(mydataFull[is.na(mydataFull$steps), ])
+mydataMissing$steps <- rep(meanEachIntvl, 8)
+mydataFull <- rbind(mydataMissing, mydata)
+stepsPerDayFull <- tapply(mydataFull$steps, mydataFull$date, sum)
+hist(stepsPerDayFull)
+cat('Mean of daily total steps (inputed data): ', mean(stepsPerDayFull), '\n', sep = '')
+cat('Median of daily total steps (inputed data): ', median(stepsPerDayFull), '\n', sep = '')
+```
+
+## Impact of inputation
+
+Because the missing data were inputed using mean steps within a certain 5-minute interval, the inputation strategy did not affect the **mean** of daily total steps; however, the **median** of daily total steps had a tiny increase.
+
+# Weekdays vs Weekends
+
+## Data preparation
+
+```{r, echo=TRUE}
+weekday <- weekdays(as.Date(mydataFull$date), abbreviate = T)
+weekday[weekday == 'Sat' | weekday == 'Sun'] <- 'weekend'
+weekday[weekday != 'weekend'] <- 'weekday'
+mydataFull$weekday <- weekday
+Weekdays <- droplevels(mydataFull[mydataFull$weekday == 'weekday', ])
+Weekends <- droplevels(mydataFull[mydataFull$weekday == 'weekend', ])
+meanEachIntvlWeekdays <- tapply(Weekdays$steps, as.factor(Weekdays$interval), mean)
+meanEachIntvlWeekends <- tapply(Weekends$steps, as.factor(Weekends$interval), mean)
+```
+
+## Time series plots
+
+```{r fig.height=4.5, echo=TRUE}
+plot(meanEachIntvlWeekdays ~ unique(Weekdays$interval), type = 'l', main = 'Weekdays')
+plot(meanEachIntvlWeekends ~ unique(Weekends$interval), type = 'l', main = 'Weekends')
+```
